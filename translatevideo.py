@@ -47,6 +47,7 @@ parser.add_argument('-outbucket', required=True, help='The S3 bucket containing 
 parser.add_argument('-outfilename', required=True, help='The file name without the extension')
 parser.add_argument('-outfiletype', required=True, help='The output file type.  E.g. mp4, mov')
 parser.add_argument('-outlang', required=True, nargs='+', help='The language codes for the desired output.  E.g. en = English, de = German')		
+parser.add_argument('-baselang', required=True, help='Set default language', default='en')
 args = parser.parse_args()
 
 # print out parameters and key header information for the user
@@ -62,7 +63,6 @@ for lang in args.outlang:
 	
 	
 # Create Transcription Job
-print args.region
 #response = createTranscribeJob( 'us-east-1', args.inbucket, args.infile )
 
 response = createTranscribeJob( args.region, args.inbucket, args.infile )
@@ -85,26 +85,28 @@ transcript = getTranscript( str(response["TranscriptionJob"]["Transcript"]["Tran
 # print( "\n==> Transcript: \n" + transcript)
 
 # Create the SRT File for the original transcript and write it out.  
-writeTranscriptToSRT( transcript, 'es', "subtitles-en.srt" )  
+writeTranscriptToSRT( transcript, args.baselang, "subtitles-%s.srt" % args.baselang )  
+
+# Download the video to annotate
+print("\n Downloading Video from S3")
 s3 = boto3.resource('s3')
-
 obj = s3.Object(args.inbucket.strip('/'), args.infile)
-
 file = obj.get()['Body'].read()
 fd = open(args.infile, 'wb')
 fd.write(file)
 fd.close()
-createVideo( args.infile, "subtitles-en.srt", args.outfilename + "-en." + args.outfiletype, "audio-en.mp3", True)
 
-print("\n Downloading Video from S3")
+createVideo( args.infile, "subtitles-%s.srt" % args.baselang, args.outfilename + "-%s." % args.baselang + args.outfiletype, "audio-%s.mp3" % args.baselang, True)
+
+
 
 
 # Now write out the translation to the transcript for each of the target languages
 for lang in args.outlang:
-	writeTranslationToSRT(transcript, 'en', lang, "subtitles-" + lang + ".srt", args.region ) 	
+	writeTranslationToSRT(transcript, args.baselang, lang, "subtitles-" + lang + ".srt", args.region ) 	
 	
 	#Now that we have the subtitle files, let's create the audio track
-	createAudioTrackFromTranslation( args.region, transcript, 'en', lang, "audio-" + lang + ".mp3" )
+	createAudioTrackFromTranslation( args.region, transcript, args.baselang, lang, "audio-" + lang + ".mp3" )
 	
 	# Finally, create the composited video
 	createVideo( args.infile, "subtitles-" + lang + ".srt", args.outfilename + "-" + lang + "." + args.outfiletype, "audio-" + lang + ".mp3", False)
