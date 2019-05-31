@@ -25,6 +25,9 @@
 #          6/29/2018: Initial version
 #
 # ==================================================================================
+import PIL
+PIL.__version__ = '1.1.1'
+
 
 from moviepy.editor import *
 from moviepy import editor

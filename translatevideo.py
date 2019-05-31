@@ -82,7 +82,7 @@ print( "\tTranscript URI: " + str(response["TranscriptionJob"]["Transcript"]["Tr
 
 # Now get the transcript JSON from AWS Transcribe
 transcript = getTranscript( str(response["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]) ) 
-# print( "\n==> Transcript: \n" + transcript)
+print( "\n==> Transcript: \n" + transcript)
 
 # Create the SRT File for the original transcript and write it out.  
 writeTranscriptToSRT( transcript, args.baselang, "subtitles-%s.srt" % args.baselang )  
