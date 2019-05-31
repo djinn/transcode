@@ -109,8 +109,14 @@ for lang in args.outlang:
 	createAudioTrackFromTranslation( args.region, transcript, args.baselang, lang, "audio-" + lang + ".mp3" )
 	
 	# Finally, create the composited video
+	output_filename = args.outfilename + "-" + lang + "." + args.outfiletype
 	createVideo( args.infile, "subtitles-" + lang + ".srt", args.outfilename + "-" + lang + "." + args.outfiletype, "audio-" + lang + ".mp3", False)
-	
+	s3 = boto3.resource('s3')
+	obj = s3.Object(args.outbucket.strip('/'), output_filename)
+	fd = open(output_filename)
+	content = fd.read()
+	obj.put(Body=content)
+	fd.close()
 	
 
 
